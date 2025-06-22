@@ -1,0 +1,18 @@
+body {
+    font-family: 'arial', sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+
+#resetButton {
+    position: fixed;
+    top: 70px;
+    right: 70px;
+    background: red;
+    border: transparent;
+    padding: 10px;
+    color: white;
+    cursor: pointer;
+}

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Snake</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="snake.css">
+    </head>
+    <body>
+        <div><button id = 'darkModeToggle'>Dark Mode</button></div>
+        <div id = "customization"><label for = "FPS">FPS:</label><input type = "number" class = "input"  id = "FPS" value = "5" min = "0" placeholder = "FPS"><label for = "apples">Apples:</label><input type = "number" class = "input" value = "1" min = "0" id = "apples" placeholder = "Apples"><label for = "growth">Growth:</label><input type = "number" class = "input" value = "1" min = "0" max = "100" id = "growth" placeholder = "Growth"><label for = "snakeColor">Snake Color</label><input type = "color" id = "snakeColor" class = "colorInput" value = "#00ff00"><label for = "fruitColor">Fruit Color</label><input type = "color" id = "fruitColor" class = "colorInput" value = "#ff0000"><button id = 'resetButton'>Reset</button><button id = "pauseButton">Paused</button></div>
+        <div class = "canvas">
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <script src="snake.js"></script> 
+     </body>
+</html>
