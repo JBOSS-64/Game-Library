@@ -33,8 +33,10 @@ let yellowBirdMidflap = new Image();
 let yellowBirdUpflap = new Image();
 let gameOver = new Image();
 let message = new Image();
-let greenPipe = new Image();
-let redPipe = new Image();
+let greenPipeBottom = new Image();
+let greenPipeTop = new Image();
+let redPipeBottom = new Image();
+let redPipeTop = new Image();
 
 
 zero.src = 'sprites/0.png';
@@ -61,9 +63,25 @@ yellowBirdMidflap.src = 'sprites/yellowbird-midflap.png';
 yellowBirdUpflap.src = 'sprites/yellowbird-upflap.png';
 gameOver.src = 'sprites/gameover.png';
 message.src = 'sprites/message.png';
-greenPipe.src = 'sprites/pipe-green.png';
-redPipe.src = 'sprites/pipe-red.png';
+greenPipeTop.src = 'sprites/pipe-green-top.png';
+greenPipeBottom.src = 'sprites/pipe-green-bottom.png';
+redPipeTop.src = 'sprites/pipe-red-top.png';
+redPipeBottom.src = 'sprites/pipe-red-bottom.png';
 
+const birdImages = {
+    yellow: {midFlap : yellowBirdMidflap, upFlap : yellowBirdUpflap, downFlap : yellowBirdDownflap},
+    red: {midFlap : redBirdMidflap, upFlap : redBirdUpflap, downFlap : redBirdDownflap},
+    blue: {midFlap : blueBirdMidflap, upFlap : blueBirdUpflap, downFlap : blueBirdDownflap},
+}
+let loaded = false;
+const gravity = 1000;
+let lastTime = 0;
+let paused = true;
+let gameEnded = false;
+let background;
+let birdColor = weightedRandom([{value: 'yellow', weight: 14}, {value: 'red', weight: 4}, {value: 'blue', weight: 2}]);
+let darkMode = false;
+const maxHeight = -100;
 
 
 
@@ -102,25 +120,260 @@ Promise.all([
     loadImage('sprites/yellowbird-upflap.png'),
     loadImage('sprites/gameover.png'),
     loadImage('sprites/message.png'),
-    loadImage('sprites/pipe-green.png'),
-    loadImage('sprites/pipe-red.png')
+    loadImage('sprites/pipe-green-bottom.png'),
+    loadImage('sprites/pipe-green-top.png'),
+    loadImage('sprites/pipe-red-bottom.png'),
+    loadImage('sprites/pipe-red-top.png')
 ]).then(images => {
     console.log("All images loaded.");
-    ctx.drawImage(backgroundDay, 0, 0, 288, 512);
-    ctx.drawImage(base, 0, 400, 288, 112);
-    ctx.drawImage(yellowBirdMidflap, 0, 0, 34, 24);
+    loaded = true;
+    drawGame();
 }).catch(err => {
     console.error(err);
 });
 
 
-let gameLoop = function () {
-    ctx.drawImage(backgroundDay, 0, 0, 288, 512);
-    ctx.drawImage(base, 0, 400, 288, 112);
-    ctx.drawImage(yellowBirdMidflap, 0, 0, 34, 24);
-    requestAnimationFrame(gameLoop);
+class Bird {
+    constructor(color) {
+        this.x = 50;
+        this.y = 200;
+        this.color = color;
+        this.state = 1;
+        this.lastFlap = 0;
+        this.targetFPS = 10;
+        this.timeStep = 1000 / this.targetFPS;
+        this.next;
+        this.velocity = 0;
+        this.jumpStrength = 300;
+    }
+
+    draw (timestamp){
+        let order = ["upFlap", "midFlap", "downFlap"];
+        if (!paused){
+        if (timestamp - this.lastFlap >= this.timeStep) {
+            this.lastFlap = timestamp;
+            if (this.next == 1) {
+                this.state = 0;
+            } else this.state++;
+            
+            if (this.state > 2) {
+                this.state = 1;
+                this.next = 1;
+            } else this.next = 0;
+        }}
+        ctx.drawImage(birdImages[this.color || 'yellow'][order[this.state]], this.x, this.y, 34, 24);
+    }
+    reset() {
+        this.x = 50;
+        this.y = 200;
+        this.state = 1;
+        this.lastFlap = 0;
+        this.velocity = 0;
+    }
+}
+
+class Pipe {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    draw() {
+        ctx.drawImage(greenPipeBottom, this.x, this.y, 52, 400);
+        ctx.drawImage(greenPipeTop, this.x, this.y - 496, 52, 400);
+    }
+}
+
+class Base {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    draw() {
+        ctx.drawImage(base, this.x, this.y, 288, 112);
+    }
+}
+
+class Background {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    draw() {
+        ctx.drawImage(background || backgroundDay, this.x, this.y, 288, 512);
+    }
+}
+
+let flappy = new Bird(birdColor);
+let startingPos = 500;
+let pipe1 = new Pipe(startingPos, randomNumber(136, 400));
+let pipe2 = new Pipe(startingPos + 144, randomNumber(136, 400));
+let pipe3 = new Pipe(startingPos + 288, randomNumber(136, 400));
+let pipes = [pipe1, pipe2, pipe3];
+
+let base1 = new Base(0, 400);
+let base2 = new Base(288, 400);
+let bases = [base1, base2];
+
+let background1 = new Background(0, 0);
+let background2 = new Background(288, 0);
+let backgrounds = [background1, background2];
+
+let startNext = false;
+
+
+function reset() {
+    flappy.reset();
+    startingPos = 500;
+    pipe1 = new Pipe(startingPos, randomNumber(136, 400));
+    pipe2 = new Pipe(startingPos + 144, randomNumber(136, 400));
+    pipe3 = new Pipe(startingPos + 288, randomNumber(136, 400));
+    pipes = [pipe1, pipe2, pipe3];
+    base1 = new Base(0, 400);
+    base2 = new Base(288, 400);
+    bases = [base1, base2];
+    background1 = new Background(0, 0);
+    background2 = new Background(288, 0);
+    backgrounds = [background1, background2];
+}
+document.addEventListener('keydown', function (e) {
+    if (e.code == 'Space') {
+        flappy.velocity = -flappy.jumpStrength;
+        paused = false;
+        if (!gameRunning){
+        gameRunning = true;
+        drawGame();
+        startNext = true;
+        }
+        if (startNext){
+            requestAnimationFrame(gameLoop);
+            startNext = false;
+        }
+    }
+});
+
+const darkButton = document.getElementById("darkModeToggle");
+darkButton.addEventListener("click", () => {
+    if (darkButton.textContent === "Dark Mode") {
+        darkButton.textContent = "Light Mode";
+    } else {
+        darkButton.textContent = "Dark Mode";
+    }
+    document.body.classList.toggle("dark-mode");
+    darkMode = !darkMode;
+    background = darkMode ? backgroundNight : backgroundDay;
+    for (let i = 0; i < 2; i++) {
+        drawGame();
+    }
+});
+darkButton.addEventListener('mousedown', (event) => {
+    event.stopPropagation();
+});
+
+document.addEventListener('mousedown', () => {
+    flappy.velocity = -flappy.jumpStrength;
+    paused = false;
+    if (!gameRunning){
+        gameRunning = true;
+        drawGame();
+        startNext = true;
+    }
+    if (startNext){
+        requestAnimationFrame(gameLoop);
+        startNext = false;
+    }
+});
+
+
+function randomNumber(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function weightedRandom(options) {
+  const totalWeight = options.reduce((sum, opt) => sum + opt.weight, 0);
+  let rand = Math.random() * totalWeight;
+
+  for (const opt of options) {
+    if (rand < opt.weight) return opt.value;
+    rand -= opt.weight;
+  }
 }
 
 
+let drawGame = function (timestamp) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < 2; i++) {
+        backgrounds[i].draw();
+    }
+    for (let i = 0; i < 3; i++) {
+        pipes[i].draw();
+    }
+    for (let i = 0; i < 2; i++) {
+        bases[i].draw();
+    }
+    flappy.draw(timestamp);
+    if (darkMode){
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // black with 50% opacity
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+let update = function (timestamp) {
+     const dt = (timestamp - lastTime) / 1000;
+    lastTime = timestamp;
+    if (!paused) {
+    flappy.velocity += gravity * dt;
+    flappy.y += flappy.velocity * dt;
+    if (flappy.y < maxHeight) flappy.y = maxHeight;
+    for (let i = 0; i < 3; i++) {
+        let prev = (i - 1 + pipes.length) % pipes.length;
+        if (pipes[i].x < -52) {
+            pipes[i].x = pipes[prev].x + 144;
+            pipes[i].y = randomNumber(136, 400);
+        }
+        pipes[i].x -= 100 * dt;   
+    }
+    for (let i = 0; i < 2; i++) {
+        let prev = (i - 1 + bases.length) % bases.length;
+        if (bases[i].x < -288) {
+            bases[i].x = bases[prev].x + 288;
+        }
+        bases[i].x -= 100 * dt;
+    }
+    for (let i = 0; i< 2; i++) {
+        let prev = (i - 1 + backgrounds.length) % backgrounds.length;
+        if (backgrounds[i].x < -288) {
+            backgrounds[i].x = backgrounds[prev].x + 288;
+        }
+        backgrounds[i].x -= 10 * dt;
+    }
+    }
+
+    if (flappy.y + 24 > 400){
+        flappy.y = 400 - 24;
+        paused = true;
+        die();
+    }
+}
+
+let die = function () {
+    paused = true;
+    drawGame();
+    reset();
+    gameRunning = false;
+}
+
+let gameLoop = function (timestamp) {
+    if (!loaded) {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+    update(timestamp);
+    if (!paused) drawGame(timestamp);
+    else ctx.drawImage(gameOver, 0, 0);
+    requestAnimationFrame(gameLoop);
+}
+
+let gameRunning = true;
 requestAnimationFrame(gameLoop);
 
