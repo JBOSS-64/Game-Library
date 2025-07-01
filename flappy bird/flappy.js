@@ -38,6 +38,12 @@ let greenPipeTop = new Image();
 let redPipeBottom = new Image();
 let redPipeTop = new Image();
 
+let dieSound = new Audio('audio/die.wav');
+let hitSound = new Audio('audio/hit.wav');
+let pointSound = new Audio('audio/point.wav');
+let swooshSound = new Audio('audio/swoosh.wav');
+let wingSound = new Audio('audio/wing.wav');
+
 
 zero.src = 'sprites/0.png';
 one.src = 'sprites/1.png';
@@ -81,6 +87,8 @@ let gameEnded = false;
 let background;
 let birdColor = weightedRandom([{value: 'yellow', weight: 14}, {value: 'red', weight: 4}, {value: 'blue', weight: 2}]);
 let darkMode = false;
+let score = 0;
+let numbers = [zero, one, two, three, four, five, six, seven, eight, nine];
 const maxHeight = -100;
 
 
@@ -176,6 +184,7 @@ class Pipe {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+        this.scored = false;
     }
 
     draw() {
@@ -224,6 +233,7 @@ let startNext = false;
 
 function reset() {
     flappy.reset();
+    score = 0;
     startingPos = 500;
     pipe1 = new Pipe(startingPos, randomNumber(136, 400));
     pipe2 = new Pipe(startingPos + 144, randomNumber(136, 400));
@@ -236,10 +246,13 @@ function reset() {
     background2 = new Background(288, 0);
     backgrounds = [background1, background2];
 }
+let spaceHeld = false;
 document.addEventListener('keydown', function (e) {
-    if (e.code == 'Space') {
+    if (e.code == 'Space' && !spaceHeld) {
+        spaceHeld = true;
         flappy.velocity = -flappy.jumpStrength;
         paused = false;
+        wingSound.cloneNode().play();
         if (!gameRunning){
         gameRunning = true;
         drawGame();
@@ -251,6 +264,12 @@ document.addEventListener('keydown', function (e) {
         }
     }
 });
+
+document.addEventListener('keyup', function (e) {
+    if (e.code == 'Space') {
+        spaceHeld = false;
+    }
+})
 
 const darkButton = document.getElementById("darkModeToggle");
 darkButton.addEventListener("click", () => {
@@ -273,6 +292,7 @@ darkButton.addEventListener('mousedown', (event) => {
 document.addEventListener('mousedown', () => {
     flappy.velocity = -flappy.jumpStrength;
     paused = false;
+    wingSound.cloneNode().play();
     if (!gameRunning){
         gameRunning = true;
         drawGame();
@@ -299,6 +319,27 @@ function weightedRandom(options) {
   }
 }
 
+function centerX(img){
+    let imgWidth = img.width;
+    return (canvas.width - imgWidth) / 2;
+}
+
+function centerY(img){
+    let imgHeight = img.height;
+    return (canvas.height - imgHeight) / 2;
+}
+
+function writeText(text, font, size, color, strokeWidth, x, y){
+    ctx.textAlign = 'center';
+    ctx.font = `${size}px ${font}`;
+    ctx.fillStyle = color;
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = strokeWidth;
+    document.fonts.load(`${size}px ${font}`).then(() => {
+        ctx.fillText(text, x, y);
+        ctx.strokeText(text, x, y);
+    });
+}
 
 let drawGame = function (timestamp) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -316,10 +357,17 @@ let drawGame = function (timestamp) {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // black with 50% opacity
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+    let totalWidth = score.toString().length * zero.width;
+    let startX = (canvas.width - totalWidth) / 2;
+    for (let i = 0; i < score.toString().length; i++){
+        let digit = score.toString()[i];
+        ctx.drawImage(numbers[digit], startX + i * zero.width, 40);  
+    }
+    //writeText(score, 'flappy-font', 40, 'white', 2, canvas.width / 2, 40);
 }
 
 let update = function (timestamp) {
-     const dt = (timestamp - lastTime) / 1000;
+    const dt = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
     if (!paused) {
     flappy.velocity += gravity * dt;
@@ -330,8 +378,15 @@ let update = function (timestamp) {
         if (pipes[i].x < -52) {
             pipes[i].x = pipes[prev].x + 144;
             pipes[i].y = randomNumber(136, 400);
+            pipes[i].scored = false;
         }
-        pipes[i].x -= 100 * dt;   
+        if (pipes[i].x < flappy.x + 12 && pipes[i].scored == false) {
+            score++;
+            pointSound.cloneNode().play();
+            console.log(score);
+            pipes[i].scored = true;
+        }
+        pipes[i].x -= 100 * dt;
     }
     for (let i = 0; i < 2; i++) {
         let prev = (i - 1 + bases.length) % bases.length;
@@ -358,6 +413,8 @@ let update = function (timestamp) {
 
 let die = function () {
     paused = true;
+    hitSound.cloneNode().play();
+    dieSound.cloneNode().play();
     drawGame();
     reset();
     gameRunning = false;
@@ -370,7 +427,7 @@ let gameLoop = function (timestamp) {
     }
     update(timestamp);
     if (!paused) drawGame(timestamp);
-    else ctx.drawImage(gameOver, 0, 0);
+    else ctx.drawImage(gameOver, centerX(gameOver), centerY(gameOver));
     requestAnimationFrame(gameLoop);
 }
 
