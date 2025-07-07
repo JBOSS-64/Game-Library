@@ -1,18 +1,85 @@
-body {
-    font-family: 'arial', sans-serif;
-    line-height: 1.6;
-    margin: 0;
-    padding: 0;
+/* Theme Variables */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --card-bg: #f0f0f0;
+  --card-border: #ccc;
+  --card-hover: #00f0ff;
 }
 
+body.dark-mode {
+  --bg-color: #111;
+  --text-color: #ffffff;
+  --card-bg: #222;
+  --card-border: #444;
+  --card-hover: #0ff;
+}
 
-#resetButton {
-    position: fixed;
-    top: 70px;
-    right: 70px;
-    background: red;
-    border: transparent;
-    padding: 10px;
-    color: white;
-    cursor: pointer;
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+h1 {
+  margin-bottom: 30px;
+  font-size: 3em;
+  color: var(--card-hover);
+}
+
+/* Toggle Button */
+#theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 1.5em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+/* Game Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  padding: 0 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Game Card */
+.game-card {
+  background-color: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  text-decoration: none;
+  color: var(--text-color);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+}
+
+.game-card:hover {
+  transform: scale(1.05);
+  border-color: var(--card-hover);
+}
+
+.game-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.game-title {
+  padding: 15px;
+  font-size: 1.25em;
+  background-color: var(--bg-color);
+  border-top: 2px solid var(--card-border);
 }

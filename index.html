@@ -3,13 +3,27 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>Idk yet</title>
+        <title>Game Library</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="style.css">
     </head>
-    <body>
-        <div id="myBox"><button id = 'resetButton'>Reset</button></div>
+    <body class="dark-mode">
+        <button id="theme-toggle" aria-label="Toggle dark/light mode">🌙</button>
+        <h1>Game Library</h1>
+            <div class="grid">
+                <a href="snake\snake.html" class="game-card">
+                <img src="images/snake.png" alt="Snake Game Screenshot">
+                <div class="game-title">Snake</div>
+                </a>
+
+                <a href="flappy bird\flappy.html" class="game-card">
+                <img src="images/flappy.png" alt="Flappy Bird Screenshot">
+                <div class="game-title">Flappy Bird</div>
+                </a>
+
+                <!-- Add more games here -->
+            </div>
         <canvas id="canvas"></canvas>
         <script src="script.js"></script> 
         

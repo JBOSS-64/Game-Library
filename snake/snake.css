@@ -106,3 +106,31 @@ body.dark-mode #darkModeToggle {
   background: white;
   color: black;
 }
+
+#theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 1.5em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 1.5em;
+  background: red;
+  border: none;
+  cursor: pointer;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+}
+
+body.dark-mode .back-button {
+  background: rgb(199, 0, 0);
+}

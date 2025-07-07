@@ -86,7 +86,7 @@ let paused = true;
 let gameEnded = false;
 let background;
 let birdColor = weightedRandom([{value: 'yellow', weight: 14}, {value: 'red', weight: 4}, {value: 'blue', weight: 2}]);
-let darkMode = false;
+let darkMode = true;
 let score = 0;
 let numbers = [zero, one, two, three, four, five, six, seven, eight, nine];
 const maxHeight = -100;
@@ -271,14 +271,24 @@ document.addEventListener('keyup', function (e) {
     }
 })
 
-const darkButton = document.getElementById("darkModeToggle");
+const darkButton = document.getElementById("theme-toggle");
+const body = document.body;
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme) {
+body.classList.remove("dark-mode", "light-mode");
+body.classList.add(savedTheme);
+darkButton.textContent = savedTheme === "dark-mode" ? "🌙" : "☀️";
+darkMode = savedTheme === "dark-mode";
+background = darkMode ? backgroundNight : backgroundDay;
+}
 darkButton.addEventListener("click", () => {
-    if (darkButton.textContent === "Dark Mode") {
-        darkButton.textContent = "Light Mode";
-    } else {
-        darkButton.textContent = "Dark Mode";
-    }
-    document.body.classList.toggle("dark-mode");
+    const isDark = body.classList.contains("dark-mode");
+    body.classList.toggle("dark-mode");
+    body.classList.toggle("light-mode");
+    const newTheme = isDark ? "light-mode" : "dark-mode";
+    localStorage.setItem("theme", newTheme);
+    // Change icon based on theme
+    darkButton.textContent = body.classList.contains("dark-mode") ? "🌙" : "☀️";
     darkMode = !darkMode;
     background = darkMode ? backgroundNight : backgroundDay;
     for (let i = 0; i < 2; i++) {
