@@ -435,6 +435,12 @@ let update = function (timestamp) {
         paused = true;
         die();
     }
+
+    for (let i = 0; i < 3; i++) {
+        if (((flappy.x + 34 > pipes[i].x && flappy.x > pipes[i].x) && (flappy.x + 34 < pipes[i].x + greenPipeTop.width && flappy.x < pipes[i].x + greenPipeTop.width) )&& (flappy.y +24 > pipes[i].y || flappy.y < pipes[i].y - 496 + greenPipeTop.height)) {
+            die();
+        }
+    }
 }
 
 let die = function () {
