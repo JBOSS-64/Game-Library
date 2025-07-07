@@ -1,3 +1,12 @@
+/*
+ChatGPT did assist in the creation of this code, however I coded most of it
+and I used ChatGPT for help since I'm fairly new to coding and still learing stuff
+
+I also used the autocomplete feature from Windsurf to help speed up the coding process
+(like all the variable declarations I had to do lol)
+*/
+
+//canvas setup
 let canvas = document.getElementById('canvas');
 let ctx = canvas.getContext('2d');
 let resetButton = document.getElementById('resetButton');
@@ -8,7 +17,7 @@ var windowWidth = window.innerWidth;
 canvas.height = 512;
 canvas.width = 288;
 
-
+//image declarations
 let zero = new Image();
 let one = new Image();
 let two = new Image();
@@ -38,13 +47,14 @@ let greenPipeTop = new Image();
 let redPipeBottom = new Image();
 let redPipeTop = new Image();
 
+//audio declarations
 let dieSound = new Audio('audio/die.wav');
 let hitSound = new Audio('audio/hit.wav');
 let pointSound = new Audio('audio/point.wav');
 let swooshSound = new Audio('audio/swoosh.wav');
 let wingSound = new Audio('audio/wing.wav');
 
-
+//image setup
 zero.src = 'sprites/0.png';
 one.src = 'sprites/1.png';
 two.src = 'sprites/2.png';
@@ -74,6 +84,7 @@ greenPipeBottom.src = 'sprites/pipe-green-bottom.png';
 redPipeTop.src = 'sprites/pipe-red-top.png';
 redPipeBottom.src = 'sprites/pipe-red-bottom.png';
 
+//variable setup
 const birdImages = {
     yellow: {midFlap : yellowBirdMidflap, upFlap : yellowBirdUpflap, downFlap : yellowBirdDownflap},
     red: {midFlap : redBirdMidflap, upFlap : redBirdUpflap, downFlap : redBirdDownflap},
@@ -92,7 +103,7 @@ let numbers = [zero, one, two, three, four, five, six, seven, eight, nine];
 const maxHeight = -100;
 
 
-
+//image loader (by chatGPT)
 function loadImage(src) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -102,7 +113,7 @@ function loadImage(src) {
     });
 }
 
-
+//loads images
 Promise.all([
     loadImage('sprites/0.png'),
     loadImage('sprites/1.png'),
@@ -140,7 +151,7 @@ Promise.all([
     console.error(err);
 });
 
-
+//classes
 class Bird {
     constructor(color) {
         this.x = 50;
@@ -213,6 +224,7 @@ class Background {
     }
 }
 
+//variables for stuff
 let flappy = new Bird(birdColor);
 let startingPos = 500;
 let pipe1 = new Pipe(startingPos, randomNumber(136, 400));
@@ -230,7 +242,7 @@ let backgrounds = [background1, background2];
 
 let startNext = false;
 
-
+//function and event listeners
 function reset() {
     flappy.reset();
     score = 0;
@@ -314,7 +326,7 @@ document.addEventListener('mousedown', () => {
     }
 });
 
-
+//actual functions
 function randomNumber(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -434,6 +446,7 @@ let die = function () {
     gameRunning = false;
 }
 
+//gameloop
 let gameLoop = function (timestamp) {
     if (!loaded) {
         requestAnimationFrame(gameLoop);
