@@ -353,17 +353,21 @@ let drawGame = function (timestamp) {
         bases[i].draw();
     }
     flappy.draw(timestamp);
+    let totalWidth = 0;
+    for (let i = 0; i < score.toString().length; i++){
+        totalWidth += numbers[score.toString()[i]].width;
+    }
+    let x = (canvas.width - totalWidth) / 2;
+    for (let i = 0; i < score.toString().length; i++){
+        let digit = score.toString()[i];
+        ctx.drawImage(numbers[digit],x, 40);
+        x += numbers[digit].width;  
+    }
+    //writeText(score, 'flappy-font', 40, 'white', 2, canvas.width / 2, 40);
     if (darkMode){
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // black with 50% opacity
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-    let totalWidth = score.toString().length * zero.width;
-    let startX = (canvas.width - totalWidth) / 2;
-    for (let i = 0; i < score.toString().length; i++){
-        let digit = score.toString()[i];
-        ctx.drawImage(numbers[digit], startX + i * zero.width, 40);  
-    }
-    //writeText(score, 'flappy-font', 40, 'white', 2, canvas.width / 2, 40);
 }
 
 let update = function (timestamp) {
