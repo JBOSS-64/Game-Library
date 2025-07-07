@@ -16,6 +16,7 @@ var windowHeight = window.innerHeight;
 var windowWidth = window.innerWidth;
 canvas.height = 512;
 canvas.width = 288;
+ctx.imageSmoothingEnabled = false;
 
 //image declarations
 let zero = new Image();
@@ -46,6 +47,20 @@ let greenPipeBottom = new Image();
 let greenPipeTop = new Image();
 let redPipeBottom = new Image();
 let redPipeTop = new Image();
+let bronze = new Image();
+let silver = new Image();
+let gold = new Image();
+let platinum = new Image();
+let getReady = new Image();
+let medalScreen = new Image();
+let newHighscore = new Image();
+let okayBtn = new Image();
+let pauseBtn = new Image();
+let resumeBtn = new Image();
+let playBtn = new Image();
+let tapStart = new Image();
+let logo = new Image();
+let menuBtn = new Image();
 
 //audio declarations
 let dieSound = new Audio('audio/die.wav');
@@ -83,6 +98,20 @@ greenPipeTop.src = 'sprites/pipe-green-top.png';
 greenPipeBottom.src = 'sprites/pipe-green-bottom.png';
 redPipeTop.src = 'sprites/pipe-red-top.png';
 redPipeBottom.src = 'sprites/pipe-red-bottom.png';
+bronze.src = 'sprites/bronze-medal.png';
+silver.src = 'sprites/silver-medal.png';
+gold.src = 'sprites/gold-medal.png';
+platinum.src = 'sprites/platinum-medal.png';
+getReady.src = 'sprites/get-ready.png';
+medalScreen.src = 'sprites/medal-screen.png';
+newHighscore.src = 'sprites/new-highscore.png';
+okayBtn.src = 'sprites/okay-button.png';
+menuBtn.src = 'sprites/menu-button.png';
+pauseBtn.src = 'sprites/pause-button.png';
+resumeBtn.src = 'sprites/resume-button.png';
+playBtn.src = 'sprites/play-button.png';
+tapStart.src = 'sprites/tap-start.png';
+logo.src = 'sprites/flappy-bird-logo.png';
 
 //variable setup
 const birdImages = {
@@ -101,7 +130,12 @@ let darkMode = true;
 let score = 0;
 let numbers = [zero, one, two, three, four, five, six, seven, eight, nine];
 const maxHeight = -100;
-
+let isFalling;
+let lastScore = 4;
+let highscore = localStorage.getItem("highscoreFlappy") || 0;
+let oldHighscore = highscore;
+let pipeColor = weightedRandom([{value: 'green', weight: 49}, {value: 'red', weight: 1}]);
+let started = false;
 
 //image loader (by chatGPT)
 function loadImage(src) {
@@ -112,6 +146,9 @@ function loadImage(src) {
         img.onerror = () => reject(`Failed to load: ${src}`);
     });
 }
+
+document.getElementById("menu-button").style.width = okayBtn.width*2 + "px";
+document.getElementById("menu-button").style.height = okayBtn.height*2 + "px";
 
 //loads images
 Promise.all([
@@ -142,7 +179,20 @@ Promise.all([
     loadImage('sprites/pipe-green-bottom.png'),
     loadImage('sprites/pipe-green-top.png'),
     loadImage('sprites/pipe-red-bottom.png'),
-    loadImage('sprites/pipe-red-top.png')
+    loadImage('sprites/pipe-red-top.png'),
+    loadImage('sprites/bronze-medal.png'),
+    loadImage('sprites/silver-medal.png'),
+    loadImage('sprites/gold-medal.png'),
+    loadImage('sprites/platinum-medal.png'),
+    loadImage('sprites/get-ready.png'),
+    loadImage('sprites/medal-screen.png'),
+    loadImage('sprites/new-highscore.png'),
+    loadImage('sprites/okay-button.png'),
+    loadImage('sprites/pause-button.png'),
+    loadImage('sprites/resume-button.png'),
+    loadImage('sprites/play-button.png'),
+    loadImage('sprites/tap-start.png'),
+    loadImage('sprites/flappy-bird-logo.png')
 ]).then(images => {
     console.log("All images loaded.");
     loaded = true;
@@ -155,7 +205,7 @@ Promise.all([
 class Bird {
     constructor(color) {
         this.x = 50;
-        this.y = 200;
+        this.y = 216;
         this.color = color;
         this.state = 1;
         this.lastFlap = 0;
@@ -168,7 +218,6 @@ class Bird {
 
     draw (timestamp){
         let order = ["upFlap", "midFlap", "downFlap"];
-        if (!paused){
         if (timestamp - this.lastFlap >= this.timeStep) {
             this.lastFlap = timestamp;
             if (this.next == 1) {
@@ -179,7 +228,7 @@ class Bird {
                 this.state = 1;
                 this.next = 1;
             } else this.next = 0;
-        }}
+        }
         ctx.drawImage(birdImages[this.color || 'yellow'][order[this.state]], this.x, this.y, 34, 24);
     }
     reset() {
@@ -199,8 +248,13 @@ class Pipe {
     }
 
     draw() {
+        if (pipeColor == "green") {
         ctx.drawImage(greenPipeBottom, this.x, this.y, 52, 400);
         ctx.drawImage(greenPipeTop, this.x, this.y - 496, 52, 400);
+        } else if (pipeColor == "red") {
+        ctx.drawImage(redPipeBottom, this.x, this.y, 52, 400);
+        ctx.drawImage(redPipeTop, this.x, this.y - 496, 52, 400);
+        }
     }
 }
 
@@ -261,6 +315,7 @@ function reset() {
 let spaceHeld = false;
 document.addEventListener('keydown', function (e) {
     if (e.code == 'Space' && !spaceHeld) {
+        if (gameRunning){
         spaceHeld = true;
         flappy.velocity = -flappy.jumpStrength;
         paused = false;
@@ -275,6 +330,7 @@ document.addEventListener('keydown', function (e) {
             startNext = false;
         }
     }
+}
 });
 
 document.addEventListener('keyup', function (e) {
@@ -312,18 +368,14 @@ darkButton.addEventListener('mousedown', (event) => {
 });
 
 document.addEventListener('mousedown', () => {
+    if (!started) {
+        started = true;
+        paused = false;
+    }
+    if (started){
     flappy.velocity = -flappy.jumpStrength;
-    paused = false;
     wingSound.cloneNode().play();
-    if (!gameRunning){
-        gameRunning = true;
-        drawGame();
-        startNext = true;
-    }
-    if (startNext){
-        requestAnimationFrame(gameLoop);
-        startNext = false;
-    }
+}
 });
 
 //actual functions
@@ -341,18 +393,18 @@ function weightedRandom(options) {
   }
 }
 
-function centerX(img){
-    let imgWidth = img.width;
+function centerX(img, mult){
+    let imgWidth = img.width*(mult||1);
     return (canvas.width - imgWidth) / 2;
 }
 
-function centerY(img){
-    let imgHeight = img.height;
+function centerY(img, mult){
+    let imgHeight = img.height*(mult||1);
     return (canvas.height - imgHeight) / 2;
 }
 
-function writeText(text, font, size, color, strokeWidth, x, y){
-    ctx.textAlign = 'center';
+function writeText(text, font, size, color, strokeWidth, x, y, allignment){
+    ctx.textAlign = allignment || "center";
     ctx.font = `${size}px ${font}`;
     ctx.fillStyle = color;
     ctx.strokeStyle = "black";
@@ -380,10 +432,39 @@ let drawGame = function (timestamp) {
         totalWidth += numbers[score.toString()[i]].width;
     }
     let x = (canvas.width - totalWidth) / 2;
+    if (started){
     for (let i = 0; i < score.toString().length; i++){
         let digit = score.toString()[i];
         ctx.drawImage(numbers[digit],x, 40);
         x += numbers[digit].width;  
+    }
+    }
+    if (started == true && paused){
+    ctx.drawImage(gameOver, centerX(gameOver), centerY(gameOver)-100);
+    ctx.drawImage(medalScreen, centerX(medalScreen,2), centerY(medalScreen,2), medalScreen.width*2, medalScreen.height*2);
+    writeText(lastScore, 'flappy-font', 20, 'white', 2, 235, 250, 'right');
+    writeText(highscore, 'flappy-font', 20, 'white', 2, 235, 290, 'right');
+    document.getElementById("menu-button").hidden = false;
+    if (highscore == lastScore && highscore != oldHighscore) {
+        ctx.drawImage(newHighscore, 160, 255, newHighscore.width*2, newHighscore.height*2);
+    }
+    if (lastScore >= 10) {
+        ctx.drawImage(bronze, 57, 239, bronze.width*2, bronze.height*2);
+    }
+    if (lastScore >= 20){
+        ctx.drawImage(silver, 57, 239, silver.width*2, silver.height*2);
+    }
+    if (lastScore >= 30){
+        ctx.drawImage(gold, 57, 239, gold.width*2, gold.height*2);
+    }
+    if (lastScore >= 40){
+        ctx.drawImage(platinum, 57, 239, platinum.width*2, platinum.height*2);
+    }    
+    } else if (started == false) {
+        let tapStartMult = 2.5
+        ctx.drawImage(tapStart, centerX(tapStart,tapStartMult), 216, tapStart.width*tapStartMult, tapStart.height*tapStartMult);
+        let logoMult = 2.5
+        ctx.drawImage(logo, centerX(logo,logoMult), 50, logo.width*logoMult, logo.height*logoMult);
     }
     //writeText(score, 'flappy-font', 40, 'white', 2, canvas.width / 2, 40);
     if (darkMode){
@@ -408,6 +489,11 @@ let update = function (timestamp) {
         }
         if (pipes[i].x < flappy.x + 12 && pipes[i].scored == false) {
             score++;
+            if (score > highscore) {
+                oldHighscore = highscore;
+                highscore = score;
+                localStorage.setItem("highscoreFlappy", highscore);
+            }
             pointSound.cloneNode().play();
             console.log(score);
             pipes[i].scored = true;
@@ -428,6 +514,16 @@ let update = function (timestamp) {
         }
         backgrounds[i].x -= 10 * dt;
     }
+    } 
+    if (!started){
+        for (let i = 0; i < 2; i++) {
+        let prev = (i - 1 + bases.length) % bases.length;
+        if (bases[i].x < -288) {
+            bases[i].x = bases[prev].x + 288;
+        }
+        bases[i].x -= 100 * dt;
+        }
+        flappy.y = 216 + 5 * Math.sin(timestamp/200);
     }
 
     if (flappy.y + 24 > 400){
@@ -436,20 +532,55 @@ let update = function (timestamp) {
         die();
     }
 
-    for (let i = 0; i < 3; i++) {
-        if (((flappy.x + 34 > pipes[i].x && flappy.x > pipes[i].x) && (flappy.x + 34 < pipes[i].x + greenPipeTop.width && flappy.x < pipes[i].x + greenPipeTop.width) )&& (flappy.y +24 > pipes[i].y || flappy.y < pipes[i].y - 496 + greenPipeTop.height)) {
+    for (let i = 0; i < pipes.length; i++) {
+        let margin = 4;
+        let birdLeft = flappy.x + margin;
+        let birdRight = flappy.x + 34 - margin;
+        let birdTop = flappy.y + margin;
+        let birdBottom = flappy.y + 24- margin;
+
+        let pipeLeft = pipes[i].x;
+        let pipeRight = pipes[i].x + 52;
+        let pipeTop = pipes[i].y - 496 + 400; // top pipe bottom edge
+        let pipeBottom = pipes[i].y; // bottom pipe top edge
+
+        let collidedWithTop = (birdRight > pipeLeft && birdLeft < pipeRight && birdTop < pipeTop);
+        let collidedWithBottom = (birdRight > pipeLeft && birdLeft < pipeRight && birdBottom > pipeBottom);
+
+        if (collidedWithTop || collidedWithBottom) {
+            drawGame();
             die();
         }
     }
+    //if flappy.x or flappy.x + 34 is between pipes[i].x and pipes[i].x + 52 die
+    //if flappy.y or flappy.y + 24 is between pipes[i].y and pipes[i].y + 400 die
 }
 
-let die = function () {
-    paused = true;
+function die() {
+    lastScore = score;
     hitSound.cloneNode().play();
     dieSound.cloneNode().play();
-    drawGame();
-    reset();
     gameRunning = false;
+    function fall(timestamp) {
+        isFalling = true;
+        const dt = (timestamp - lastTime) / 1000;
+        lastTime = timestamp;
+
+        flappy.velocity += gravity * dt;
+        flappy.y += flappy.velocity * dt;
+
+        drawGame(timestamp);
+
+        if (flappy.y + 24 < 400) {
+            requestAnimationFrame(fall);
+        } else {
+            flappy.y = 400 - 24;
+            paused = true;
+            drawGame(timestamp);
+            reset();
+        }
+    }
+    requestAnimationFrame(fall);
 }
 
 //gameloop
@@ -459,11 +590,11 @@ let gameLoop = function (timestamp) {
         return;
     }
     update(timestamp);
-    if (!paused) drawGame(timestamp);
-    else ctx.drawImage(gameOver, centerX(gameOver), centerY(gameOver));
+    drawGame(timestamp);
+    console.log(started);
     requestAnimationFrame(gameLoop);
 }
 
-let gameRunning = true;
+let gameRunning = false;
 requestAnimationFrame(gameLoop);
 

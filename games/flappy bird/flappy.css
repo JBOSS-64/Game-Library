@@ -20,7 +20,19 @@ body.dark-mode {
   color: white;
 }
 
+.imageBtn {
+  image-rendering: pixelated;
+}
 
+#menu-button {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%) translateY(20px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%) translateY(72px); /* if also centering horizontally */
+    cursor: pointer;
+    background-color: transparent;
+}
 
 .canvas {
     display: flex;
