@@ -11,7 +11,7 @@
     <body class="dark-mode">
         <button id="theme-toggle" aria-label="Toggle dark/light mode">🌙</button>
         <a href="../../index.html"><button class = "back-button">Back</button></a>
-        <input id = "menu-button" class = "imageBtn" type="image" src="sprites/okay-button.png" alt="Button" onclick="reset()" hidden>
+        <input id = "menu-button" class = "imageBtn" type="image" src="sprites/okay-button.png" alt="Button" onclick="reset(); swooshSound.play();" hidden>
 
         <canvas id="canvas"></canvas>
         <script src="flappy.js"></script> 

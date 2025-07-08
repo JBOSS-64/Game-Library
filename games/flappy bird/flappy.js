@@ -215,6 +215,7 @@ class Bird {
         this.next;
         this.velocity = 0;
         this.jumpStrength = 300;
+        this.rotation = 0;
     }
 
     draw (timestamp){
@@ -230,7 +231,20 @@ class Bird {
                 this.next = 1;
             } else this.next = 0;
         }
-        ctx.drawImage(birdImages[this.color || 'yellow'][order[this.state]], this.x, this.y, 34, 24);
+        ctx.save();
+
+        // Move origin to the bird's center
+        ctx.translate(this.x + 17, this.y + 12);  // 17 and 12 are half width and height
+
+        // Rotate around the new origin (bird center)
+        ctx.rotate(this.rotation || 0);  // fallback to 0 if undefined
+
+        // Draw bird centered at origin (top-left at -17, -12)
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(birdImages[this.color || 'yellow'][order[this.state]], -17, -12, 34, 24);
+        ctx.imageSmoothingEnabled = false;
+
+        ctx.restore();
     }
     reset() {
         this.x = 50;
@@ -238,6 +252,7 @@ class Bird {
         this.state = 1;
         this.lastFlap = 0;
         this.velocity = 0;
+        this.rotation = 0;
     }
 }
 
@@ -412,9 +427,11 @@ function writeText(text, font, size, color, strokeWidth, x, y, allignment){
 let drawGame = function (timestamp) {
     if (gameState != "paused") {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = true;
     for (let i = 0; i < 2; i++) {
         backgrounds[i].draw();
     }
+    ctx.imageSmoothingEnabled = false;
     for (let i = 0; i < 3; i++) {
         pipes[i].draw();
     }
@@ -474,6 +491,13 @@ let update = function (timestamp) {
     if (gameState == "running") {
     flappy.velocity += gravity * dt;
     flappy.y += flappy.velocity * dt;
+    let maxRotation = Math.PI / 4; // 45 degrees up
+    let minRotation = -Math.PI / 2; // 90 degrees down
+
+    flappy.rotation = flappy.velocity / 600; // tweak divisor for sensitivity
+    if (flappy.rotation > maxRotation) flappy.rotation = maxRotation;
+    if (flappy.rotation < minRotation) flappy.rotation = minRotation;
+
     if (flappy.y < maxHeight) flappy.y = maxHeight;
     for (let i = 0; i < 3; i++) {
         let prev = (i - 1 + pipes.length) % pipes.length;
@@ -536,6 +560,13 @@ let update = function (timestamp) {
             bases[i].x = bases[prev].x + 288;
         }
         bases[i].x -= 100 * dt;
+        }
+        for (let i = 0; i< 2; i++) {
+            let prev = (i - 1 + backgrounds.length) % backgrounds.length;
+            if (backgrounds[i].x < -288) {
+                backgrounds[i].x = backgrounds[prev].x + 288;
+            }
+            backgrounds[i].x -= 10 * dt;
         }
         flappy.y = 216 + 5 * Math.sin(timestamp/200);
     }
