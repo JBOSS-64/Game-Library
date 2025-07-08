@@ -18,6 +18,16 @@ canvas.height = 512;
 canvas.width = 288;
 ctx.imageSmoothingEnabled = false;
 
+//image loader (by chatGPT)
+function loadImage(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(`Failed to load: ${src}`);
+    });
+}
+
 //image declarations
 let zero = new Image();
 let one = new Image();
@@ -112,44 +122,6 @@ resumeBtn.src = 'sprites/resume-button.png';
 playBtn.src = 'sprites/play-button.png';
 tapStart.src = 'sprites/tap-start.png';
 logo.src = 'sprites/flappy-bird-logo.png';
-
-//variable setup
-const birdImages = {
-    yellow: {midFlap : yellowBirdMidflap, upFlap : yellowBirdUpflap, downFlap : yellowBirdDownflap},
-    red: {midFlap : redBirdMidflap, upFlap : redBirdUpflap, downFlap : redBirdDownflap},
-    blue: {midFlap : blueBirdMidflap, upFlap : blueBirdUpflap, downFlap : blueBirdDownflap},
-}
-let loaded = false;
-const gravity = 1000;
-let lastTime = 0;
-let paused = true;
-let gameEnded = false;
-let background;
-let birdColor = weightedRandom([{value: 'yellow', weight: 14}, {value: 'red', weight: 4}, {value: 'blue', weight: 2}]);
-let darkMode = true;
-let score = 0;
-let numbers = [zero, one, two, three, four, five, six, seven, eight, nine];
-const maxHeight = -100;
-let isFalling;
-let lastScore = 4;
-let highscore = localStorage.getItem("highscoreFlappy") || 0;
-let oldHighscore = highscore;
-let pipeColor = weightedRandom([{value: 'green', weight: 49}, {value: 'red', weight: 1}]);
-let started = false;
-
-//image loader (by chatGPT)
-function loadImage(src) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = src;
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(`Failed to load: ${src}`);
-    });
-}
-
-document.getElementById("menu-button").style.width = okayBtn.width*2 + "px";
-document.getElementById("menu-button").style.height = okayBtn.height*2 + "px";
-
 //loads images
 Promise.all([
     loadImage('sprites/0.png'),
@@ -200,6 +172,35 @@ Promise.all([
 }).catch(err => {
     console.error(err);
 });
+
+document.getElementById("menu-button").style.width = okayBtn.width*2 + "px";
+document.getElementById("menu-button").style.height = okayBtn.height*2 + "px";
+
+
+//variable setup
+const birdImages = {
+    yellow: {midFlap : yellowBirdMidflap, upFlap : yellowBirdUpflap, downFlap : yellowBirdDownflap},
+    red: {midFlap : redBirdMidflap, upFlap : redBirdUpflap, downFlap : redBirdDownflap},
+    blue: {midFlap : blueBirdMidflap, upFlap : blueBirdUpflap, downFlap : blueBirdDownflap},
+}
+let loaded = false;
+const gravity = 1000;
+let lastTime = 0;
+let paused = true;
+let gameEnded = false;
+let background;
+let birdColor = weightedRandom([{value: 'yellow', weight: 14}, {value: 'red', weight: 4}, {value: 'blue', weight: 2}]);
+let darkMode = true;
+let score = 0;
+let numbers = [zero, one, two, three, four, five, six, seven, eight, nine];
+const maxHeight = -100;
+let isFalling;
+let lastScore = 4;
+let highscore = localStorage.getItem("highscoreFlappy") || 0;
+let oldHighscore = highscore;
+let pipeColor = weightedRandom([{value: 'green', weight: 49}, {value: 'red', weight: 1}]);
+let started = false;
+let gameState = "start";
 
 //classes
 class Bird {
@@ -278,7 +279,7 @@ class Background {
     }
 }
 
-//variables for stuff
+//variables for classes
 let flappy = new Bird(birdColor);
 let startingPos = 500;
 let pipe1 = new Pipe(startingPos, randomNumber(136, 400));
@@ -311,25 +312,20 @@ function reset() {
     background1 = new Background(0, 0);
     background2 = new Background(288, 0);
     backgrounds = [background1, background2];
+    document.getElementById("menu-button").hidden = true;
+    gameState = "start";
 }
 let spaceHeld = false;
 document.addEventListener('keydown', function (e) {
     if (e.code == 'Space' && !spaceHeld) {
-        if (gameRunning){
-        spaceHeld = true;
+        if (gameState == "start"){
+            gameState = "running";
+        }
+        if (gameState == "running"){
         flappy.velocity = -flappy.jumpStrength;
-        paused = false;
+        spaceHeld = true;
         wingSound.cloneNode().play();
-        if (!gameRunning){
-        gameRunning = true;
-        drawGame();
-        startNext = true;
         }
-        if (startNext){
-            requestAnimationFrame(gameLoop);
-            startNext = false;
-        }
-    }
 }
 });
 
@@ -366,13 +362,11 @@ darkButton.addEventListener("click", () => {
 darkButton.addEventListener('mousedown', (event) => {
     event.stopPropagation();
 });
-
 document.addEventListener('mousedown', () => {
-    if (!started) {
-        started = true;
-        paused = false;
+    if (gameState == "start"){
+        gameState = "running";
     }
-    if (started){
+    if (gameState == "running"){
     flappy.velocity = -flappy.jumpStrength;
     wingSound.cloneNode().play();
 }
@@ -416,6 +410,7 @@ function writeText(text, font, size, color, strokeWidth, x, y, allignment){
 }
 
 let drawGame = function (timestamp) {
+    if (gameState != "paused") {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let i = 0; i < 2; i++) {
         backgrounds[i].draw();
@@ -426,20 +421,24 @@ let drawGame = function (timestamp) {
     for (let i = 0; i < 2; i++) {
         bases[i].draw();
     }
-    flappy.draw(timestamp);
+    if (gameState != "dead" && gameState != "gameover") {
+        flappy.draw(timestamp); 
+    } else {
+        flappy.draw();
+    }
     let totalWidth = 0;
     for (let i = 0; i < score.toString().length; i++){
         totalWidth += numbers[score.toString()[i]].width;
     }
     let x = (canvas.width - totalWidth) / 2;
-    if (started){
+    if (gameState == "running" || gameState == "paused" || gameState == "dead") {
     for (let i = 0; i < score.toString().length; i++){
         let digit = score.toString()[i];
         ctx.drawImage(numbers[digit],x, 40);
         x += numbers[digit].width;  
     }
     }
-    if (started == true && paused){
+    if (gameState == "gameover") {
     ctx.drawImage(gameOver, centerX(gameOver), centerY(gameOver)-100);
     ctx.drawImage(medalScreen, centerX(medalScreen,2), centerY(medalScreen,2), medalScreen.width*2, medalScreen.height*2);
     writeText(lastScore, 'flappy-font', 20, 'white', 2, 235, 250, 'right');
@@ -460,23 +459,19 @@ let drawGame = function (timestamp) {
     if (lastScore >= 40){
         ctx.drawImage(platinum, 57, 239, platinum.width*2, platinum.height*2);
     }    
-    } else if (started == false) {
+    } else if (gameState == "start") {
         let tapStartMult = 2.5
         ctx.drawImage(tapStart, centerX(tapStart,tapStartMult), 216, tapStart.width*tapStartMult, tapStart.height*tapStartMult);
         let logoMult = 2.5
         ctx.drawImage(logo, centerX(logo,logoMult), 50, logo.width*logoMult, logo.height*logoMult);
     }
-    //writeText(score, 'flappy-font', 40, 'white', 2, canvas.width / 2, 40);
-    if (darkMode){
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // black with 50% opacity
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
+}
 }
 
 let update = function (timestamp) {
     const dt = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
-    if (!paused) {
+    if (gameState == "running") {
     flappy.velocity += gravity * dt;
     flappy.y += flappy.velocity * dt;
     if (flappy.y < maxHeight) flappy.y = maxHeight;
@@ -514,8 +509,27 @@ let update = function (timestamp) {
         }
         backgrounds[i].x -= 10 * dt;
     }
+    for (let i = 0; i < pipes.length; i++) {
+    let margin = 4;
+    let birdLeft = flappy.x + margin;
+    let birdRight = flappy.x + 34 - margin;
+    let birdTop = flappy.y + margin;
+    let birdBottom = flappy.y + 24- margin;
+
+    let pipeLeft = pipes[i].x;
+    let pipeRight = pipes[i].x + 52;
+    let pipeTop = pipes[i].y - 496 + 400; // top pipe bottom edge
+    let pipeBottom = pipes[i].y; // bottom pipe top edge
+
+    let collidedWithTop = (birdRight > pipeLeft && birdLeft < pipeRight && birdTop < pipeTop);
+    let collidedWithBottom = (birdRight > pipeLeft && birdLeft < pipeRight && birdBottom > pipeBottom);
+
+    if (collidedWithTop || collidedWithBottom) {
+        die();
+    }
+    }
     } 
-    if (!started){
+    if (gameState == "start") {
         for (let i = 0; i < 2; i++) {
         let prev = (i - 1 + bases.length) % bases.length;
         if (bases[i].x < -288) {
@@ -531,36 +545,15 @@ let update = function (timestamp) {
         paused = true;
         die();
     }
-
-    for (let i = 0; i < pipes.length; i++) {
-        let margin = 4;
-        let birdLeft = flappy.x + margin;
-        let birdRight = flappy.x + 34 - margin;
-        let birdTop = flappy.y + margin;
-        let birdBottom = flappy.y + 24- margin;
-
-        let pipeLeft = pipes[i].x;
-        let pipeRight = pipes[i].x + 52;
-        let pipeTop = pipes[i].y - 496 + 400; // top pipe bottom edge
-        let pipeBottom = pipes[i].y; // bottom pipe top edge
-
-        let collidedWithTop = (birdRight > pipeLeft && birdLeft < pipeRight && birdTop < pipeTop);
-        let collidedWithBottom = (birdRight > pipeLeft && birdLeft < pipeRight && birdBottom > pipeBottom);
-
-        if (collidedWithTop || collidedWithBottom) {
-            drawGame();
-            die();
-        }
-    }
     //if flappy.x or flappy.x + 34 is between pipes[i].x and pipes[i].x + 52 die
     //if flappy.y or flappy.y + 24 is between pipes[i].y and pipes[i].y + 400 die
 }
 
 function die() {
+    gameState = "dead";
     lastScore = score;
     hitSound.cloneNode().play();
     dieSound.cloneNode().play();
-    gameRunning = false;
     function fall(timestamp) {
         isFalling = true;
         const dt = (timestamp - lastTime) / 1000;
@@ -577,7 +570,7 @@ function die() {
             flappy.y = 400 - 24;
             paused = true;
             drawGame(timestamp);
-            reset();
+            gameState = "gameover";
         }
     }
     requestAnimationFrame(fall);
@@ -591,7 +584,6 @@ let gameLoop = function (timestamp) {
     }
     update(timestamp);
     drawGame(timestamp);
-    console.log(started);
     requestAnimationFrame(gameLoop);
 }
 
