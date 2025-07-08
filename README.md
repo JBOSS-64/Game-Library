@@ -7,6 +7,9 @@ The games currently included are:
 * Snake
 * Flappy Bird (unfinished)
 
+You can play the current games here:
+[https://jboss-64.github.io/Game-Library/]
+
 ## AI Usage
 ChatGPT was used in this project to help me learn how do do stuff in javascript, html, and CSS, however it did not soley write the code to this project, it only guided me. A few sections were generated directly by it but I created most of the code myself. The windsurf AI autocomplete extention for VS code was also used to speed up the coding process. ChatGPT and windsurf did make most of the CSS, because who likes writing CSS.
 
