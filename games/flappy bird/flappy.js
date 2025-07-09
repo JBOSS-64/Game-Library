@@ -168,13 +168,12 @@ Promise.all([
 ]).then(images => {
     console.log("All images loaded.");
     loaded = true;
+    okayButton = new Button(canvas.width/2, 330, okayBtn, 2);
+    pauseButton = new Button(15, 15, pauseBtn, 2);
     drawGame();
 }).catch(err => {
     console.error(err);
 });
-
-document.getElementById("menu-button").style.width = okayBtn.width*2 + "px";
-document.getElementById("menu-button").style.height = okayBtn.height*2 + "px";
 
 
 //variable setup
@@ -240,9 +239,7 @@ class Bird {
         ctx.rotate(this.rotation || 0);  // fallback to 0 if undefined
 
         // Draw bird centered at origin (top-left at -17, -12)
-        ctx.imageSmoothingEnabled = true;
         ctx.drawImage(birdImages[this.color || 'yellow'][order[this.state]], -17, -12, 34, 24);
-        ctx.imageSmoothingEnabled = false;
 
         ctx.restore();
     }
@@ -294,6 +291,19 @@ class Background {
     }
 }
 
+class Button {
+    constructor (x, y, image, mult){
+        this.x = x;
+        this.y = y;
+        this.image = image;
+        this.width = this.image.width*(mult||1);
+        this.height = this.image.height*(mult||1);
+    }
+    draw() {
+        ctx.drawImage(this.image, this.x-this.width/2, this.y-this.height/2, this.width, this.height);
+    }
+}
+
 //variables for classes
 let flappy = new Bird(birdColor);
 let startingPos = 500;
@@ -310,7 +320,8 @@ let background1 = new Background(0, 0);
 let background2 = new Background(288, 0);
 let backgrounds = [background1, background2];
 
-let startNext = false;
+let okayButton;
+let pauseButton;
 
 //function and event listeners
 function reset() {
@@ -370,9 +381,6 @@ darkButton.addEventListener("click", () => {
     darkButton.textContent = body.classList.contains("dark-mode") ? "🌙" : "☀️";
     darkMode = !darkMode;
     background = darkMode ? backgroundNight : backgroundDay;
-    for (let i = 0; i < 2; i++) {
-        drawGame();
-    }
 });
 darkButton.addEventListener('mousedown', (event) => {
     event.stopPropagation();
@@ -384,8 +392,89 @@ document.addEventListener('mousedown', () => {
     if (gameState == "running"){
     flappy.velocity = -flappy.jumpStrength;
     wingSound.cloneNode().play();
-}
+    }
 });
+
+canvas.addEventListener('click', function (e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    //okay button bounds
+    const left   = okayButton.x - okayButton.width / 2;
+    const right  = okayButton.x + okayButton.width / 2;
+    const top    = okayButton.y - okayButton.height / 2;
+    const bottom = okayButton.y + okayButton.height / 2;
+
+    //pause button bounds
+    const left2   = pauseButton.x - pauseButton.width / 2;
+    const right2  = pauseButton.x + pauseButton.width / 2;
+    const top2    = pauseButton.y - pauseButton.height / 2;
+    const bottom2 = pauseButton.y + pauseButton.height / 2;
+
+    if (gameState == "gameover"){
+        if (mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom) {
+            reset();
+            swooshSound.play();
+        }
+    }
+    if (gameState == "running" || gameState == "paused"){
+        if (mouseX >= left2 && mouseX <= right2 && mouseY >= top2 && mouseY <= bottom2) {
+            gameState = (gameState == "paused") ? "running" : "paused";
+            pauseButton.image = (gameState == "paused") ? resumeBtn : pauseBtn;
+        }
+    }
+});
+
+canvas.addEventListener('mousedown', function (e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    //pause button bounds
+    const left2   = pauseButton.x - pauseButton.width / 2;
+    const right2  = pauseButton.x + pauseButton.width / 2;
+    const top2    = pauseButton.y - pauseButton.height / 2;
+    const bottom2 = pauseButton.y + pauseButton.height / 2;
+    if (gameState == "running" || gameState == "paused"){
+        if (mouseX >= left2 && mouseX <= right2 && mouseY >= top2 && mouseY <= bottom2) {
+            e.stopPropagation();
+        }
+    }
+});
+
+canvas.addEventListener('mousemove', function (e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    //okay button bounds
+    const left   = okayButton.x - okayButton.width / 2;
+    const right  = okayButton.x + okayButton.width / 2;
+    const top    = okayButton.y - okayButton.height / 2;
+    const bottom = okayButton.y + okayButton.height / 2;
+
+    //pause button bounds
+    const left2   = pauseButton.x - pauseButton.width / 2;
+    const right2  = pauseButton.x + pauseButton.width / 2;
+    const top2    = pauseButton.y - pauseButton.height / 2;
+    const bottom2 = pauseButton.y + pauseButton.height / 2;
+
+    if (gameState == "gameover"){
+        if (mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom) {
+            canvas.style.cursor = 'pointer';
+        } else {
+            canvas.style.cursor = 'default';
+        }
+    }
+    if (gameState == "running" || gameState == "paused"){
+        if (mouseX >= left2 && mouseX <= right2 && mouseY >= top2 && mouseY <= bottom2) {
+            canvas.style.cursor = 'pointer';
+        } else {
+            canvas.style.cursor = 'default';
+        }
+    }
+});
+
 
 //actual functions
 function randomNumber(min, max) {
@@ -455,12 +544,16 @@ let drawGame = function (timestamp) {
         x += numbers[digit].width;  
     }
     }
+    if (gameState == "running") {
+        pauseButton.image = pauseBtn;
+        pauseButton.draw();
+    }
     if (gameState == "gameover") {
     ctx.drawImage(gameOver, centerX(gameOver), centerY(gameOver)-100);
     ctx.drawImage(medalScreen, centerX(medalScreen,2), centerY(medalScreen,2), medalScreen.width*2, medalScreen.height*2);
     writeText(lastScore, 'flappy-font', 20, 'white', 2, 235, 250, 'right');
     writeText(highscore, 'flappy-font', 20, 'white', 2, 235, 290, 'right');
-    document.getElementById("menu-button").hidden = false;
+    okayButton.draw();
     if (highscore == lastScore && highscore != oldHighscore) {
         ctx.drawImage(newHighscore, 160, 255, newHighscore.width*2, newHighscore.height*2);
     }
@@ -482,6 +575,8 @@ let drawGame = function (timestamp) {
         let logoMult = 2.5
         ctx.drawImage(logo, centerX(logo,logoMult), 50, logo.width*logoMult, logo.height*logoMult);
     }
+} else {
+    pauseButton.draw();
 }
 }
 
@@ -506,7 +601,7 @@ let update = function (timestamp) {
             pipes[i].y = randomNumber(136, 400);
             pipes[i].scored = false;
         }
-        if (pipes[i].x < flappy.x + 12 && pipes[i].scored == false) {
+        if (pipes[i].x < flappy.x + 17 && pipes[i].scored == false) {
             score++;
             if (score > highscore) {
                 oldHighscore = highscore;

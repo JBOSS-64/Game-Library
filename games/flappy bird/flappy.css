@@ -33,6 +33,13 @@ body.dark-mode {
     cursor: pointer;
     background-color: transparent;
 }
+#pause-button {
+    position: fixed;
+    top : 50px;
+    left: 50px;
+    cursor: pointer;
+    background-color: transparent;
+}
 
 .canvas {
     display: flex;
