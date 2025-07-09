@@ -5,7 +5,7 @@ This project is a game library for "classic games" that I have coded myself (wit
 
 The games currently included are:
 * Snake
-* Flappy Bird (unfinished)
+* Flappy Bird
 
 You can play the current games here:
 [Game Library Demo](https://jboss-64.github.io/Game-Library/)
