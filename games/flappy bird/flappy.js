@@ -187,7 +187,7 @@ const gravity = 1000;
 let lastTime = 0;
 let paused = true;
 let gameEnded = false;
-let background;
+let background = weightedRandom([{value: backgroundDay, weight: 19}, {value: backgroundNight, weight: 1}]);
 let birdColor = weightedRandom([{value: 'yellow', weight: 14}, {value: 'red', weight: 4}, {value: 'blue', weight: 2}]);
 let darkMode = true;
 let score = 0;
@@ -328,6 +328,8 @@ function reset() {
     flappy.reset();
     score = 0;
     startingPos = 500;
+    background = weightedRandom([{value: backgroundDay, weight: 19}, {value: backgroundNight, weight: 1}]);
+    pipeColor = weightedRandom([{value: 'green', weight: 49}, {value: 'red', weight: 1}]);
     pipe1 = new Pipe(startingPos, randomNumber(136, 400));
     pipe2 = new Pipe(startingPos + 144, randomNumber(136, 400));
     pipe3 = new Pipe(startingPos + 288, randomNumber(136, 400));
@@ -369,7 +371,6 @@ body.classList.remove("dark-mode", "light-mode");
 body.classList.add(savedTheme);
 darkButton.textContent = savedTheme === "dark-mode" ? "🌙" : "☀️";
 darkMode = savedTheme === "dark-mode";
-background = darkMode ? backgroundNight : backgroundDay;
 }
 darkButton.addEventListener("click", () => {
     const isDark = body.classList.contains("dark-mode");
@@ -380,7 +381,6 @@ darkButton.addEventListener("click", () => {
     // Change icon based on theme
     darkButton.textContent = body.classList.contains("dark-mode") ? "🌙" : "☀️";
     darkMode = !darkMode;
-    background = darkMode ? backgroundNight : backgroundDay;
 });
 darkButton.addEventListener('mousedown', (event) => {
     event.stopPropagation();
